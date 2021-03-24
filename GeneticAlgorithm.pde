@@ -2,16 +2,17 @@ import java.util.Arrays; //<>// //<>// //<>// //<>//
 import java.util.List;
 
 float[] solutionGenes = 
-{0.9767598,
-0.36544144,
-0.4236911,
-0.6538502,
-0.44236708, 
-0.9793473,
-0.3889892,
-0.26177108,
-0.41750795,
-0.35137576};
+{0.060411155, 
+0.75677484, 
+0.66067684, 
+0.1981659, 
+0.8992988, 
+0.12986219, 
+0.07193941, 
+0.0549348, 
+0.6006528, 
+0.18245798};
+
 
 int timer;
 int generation;
@@ -61,7 +62,7 @@ void setup() {
     
     walls = new ArrayList<Wall>();
     walls.add(new Wall(new PVector(width / 2, 2 * height / 4), new PVector(30,(height / 4))));
-    walls.add(new Wall(new PVector(2,height / 3), new PVector(3*width/4,30)));
+    walls.add(new Wall(new PVector(2,height/3), new PVector(width/4,30)));
 }
 
 void draw() {
@@ -199,7 +200,6 @@ void creatureInfo(Creature best) {
     text("  Max. velocity : " + best.getMaximumVelocity(), 0, 180);
     text("  Mutation amount: " + best.getMutationAmount(), 0, 200);
     text("  Initial direction: " + best.getInitialDirection(), 0, 220);
-    text("  Noise offset: " + best.getNoiseOffset(), 0, 240);
 }
 
 void mousePressed() {

@@ -21,16 +21,16 @@ public class GeneticAlgorithm extends PApplet {
 
 
 float[] solutionGenes = 
-{0.9767598f,
-0.36544144f,
-0.4236911f,
-0.6538502f,
-0.44236708f, 
-0.9793473f,
-0.3889892f,
-0.26177108f,
-0.41750795f,
-0.35137576f};
+{0.2561929f,
+0.66913694f,
+0.61161053f,
+0.8175991f,
+0.50009596f,
+0.3128931f,
+0.9460884f,
+0.991004f,
+0.38070688f,
+0.2815694f};
 
 int timer;
 int generation;
@@ -43,8 +43,8 @@ float bestFitness;
 static final int POPULATION_SIZE = 300;
 static final int TIME_PER_GENERATION = 10;
 static final float SPEED_MULTIPLIER = 2;
-static final String MUTATION_TYPE = "random";
-static final boolean SOLVED = false;
+static final boolean SOLVED = true;
+static final String MUTATION_TYPE = "random"; //exponential/exponential-random/random/constant/no
 
 Creature solution;
 Creature previousTop;
@@ -80,7 +80,7 @@ public void setup() {
     
     walls = new ArrayList<Wall>();
     walls.add(new Wall(new PVector(width / 2, 2 * height / 4), new PVector(30,(height / 4))));
-    walls.add(new Wall(new PVector(2,height / 3), new PVector(3*width/4,30)));
+    walls.add(new Wall(new PVector(2,height/3), new PVector(width/4,30)));
 }
 
 public void draw() {
@@ -339,7 +339,7 @@ class Creature { //<>//
     float dBR = dist(width, height, direction.x, direction.y);
     float dBL = dist(0, height, direction.x, direction.y);
     float dMax = max(max(dTL, dTR), max(dBL, dBR));
-    float distanceReward = map(d, dMax, 0, 0, 1);          //Max=1
+    float distanceReward = map(d, dMax, 0, 0, 3);          //Max=1
     float velocityReward = (velocity.mag()!=0 || maximumVelocity!=0) ? velocity.mag()/maximumVelocity : 0; //Max=1
     checkVisibleGoal();
     float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
@@ -365,7 +365,7 @@ class Creature { //<>//
     stillMoving =  true;
     if (firstFrame) {
       statringFrameCount = frameCount;
-      //acceleration.rotate(initialDirection.heading());
+      acceleration.rotate(initialDirection.heading());
       firstFrame=false;
     }
 
@@ -415,15 +415,15 @@ class Creature { //<>//
 
     for (int i = 0; i < genePoolSize; i++) {
 
-      //boolean willMutate = random(1) > 0.5; 
+      boolean willMutate = random(1) > 0.5f; 
 
-      //if (willMutate) {
-      if (genes[i] > 0.5f) {
-        genes[i] -= mutation;
-      } else {
-        genes[i] += mutation;
+      if (willMutate) {
+        if (genes[i] > 0.5f) {
+          genes[i] -= mutation;
+        } else {
+          genes[i] += mutation;
+        }
       }
-      //}
       if (genes[i]<0)genes[i]=abs(genes[i]);
       if (genes[i]>1)genes[i]=2-genes[i];
     }
@@ -503,7 +503,7 @@ class Creature { //<>//
         float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-          goalNotVisiblePunishment=-3;
+          goalNotVisiblePunishment=-2;
           return;
         }
       }
