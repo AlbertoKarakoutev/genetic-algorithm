@@ -1,4 +1,4 @@
-class Creature {
+class Creature { //<>//
 
   PVector location;
   PVector velocity;
@@ -7,15 +7,16 @@ class Creature {
   float[] genes;
 
   boolean firstFrame = true;
-
   boolean visible = true;
 
-  static final int genePoolSize = 30;
+  static final int genePoolSize = 10;
   int collisionPunishment = 0;
   int offScreenPunishment = 0;
+  int goalNotVisiblePunishment = 0;
 
-  float accelerationAngle;
+  float accelerationAngle = 0;
   float lastTurn;
+  float noiseLocation = 0;
 
   //Genes:
   color col;                //0,1,2
@@ -24,8 +25,9 @@ class Creature {
   float maximumVelocity;    //5
   int seed;                 //6
   PVector initialDirection; //7,8
-  int accelerationFrequency;//9
-  float[] turnSequence;       //10:29
+  int noiseOffset;           //9
+
+  int statringFrameCount;
 
   float mutationAmount;
 
@@ -34,14 +36,14 @@ class Creature {
     genes = new float[genePoolSize];
 
     for (int i = 0; i < genePoolSize; i++) {
-      genes[i] = random(1); //<>//
+      genes[i] = random(1);
     }
 
     readGenes();
 
     location = new PVector(100, height/2);
     velocity = new PVector();
-    acceleration = initialDirection.copy();
+    acceleration = new PVector(0, 1);
   }
 
   public Creature(float[] genes) {
@@ -52,17 +54,19 @@ class Creature {
 
     location = new PVector(100, height/2);
     velocity = new PVector();
-    acceleration = initialDirection.copy();
+    acceleration = new PVector(0, 1);
   }
 
-  public Creature(Creature parent) {
-    float lastFitness = parent.getFitness();
-    genes = parent.getGenes();
-    mutate(lastFitness);
+  public Creature(float[] genes, float fitness) {
+
+    this.genes = genes;
+
+    mutate(fitness);
     readGenes();
+
     location = new PVector(100, height/2);
     velocity = new PVector();
-    acceleration = initialDirection.copy();
+    acceleration = new PVector(0, 1);
   }
 
   float getFitness() {
@@ -74,9 +78,10 @@ class Creature {
     float dMax = max(max(dTL, dTR), max(dBL, dBR));
     float distanceReward = map(d, dMax, 0, 0, 1);          //Max=1
     float velocityReward = (velocity.mag()!=0 || maximumVelocity!=0) ? velocity.mag()/maximumVelocity : 0; //Max=1
-    float fitness = distanceReward + collisionPunishment + offScreenPunishment /*+ velocityReward - turnPenalty*/;
-    if (fitness<-1)fitness=-1;
-    return map(fitness, -1, 1, 0, 1);
+    checkVisibleGoal();
+    float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
+    //float fitnessMapped = map(fitness, -1, 1, 0, 1);
+    return fitness;
   }
 
   void readGenes() {
@@ -85,52 +90,40 @@ class Creature {
     int b = (int)mapGene(2, 0, 255);
     col = color(r, g, b);
 
-    accelerationForce = speedMultiplier*mapGene(3, 0.2, 1);
+    accelerationForce = SPEED_MULTIPLIER*mapGene(3, 0.2, 1);
     rotationSpeed =     mapGene(4, 1, PI/2);
-    maximumVelocity =   speedMultiplier*mapGene(5, 0.1, 1)*5;
+    maximumVelocity =   SPEED_MULTIPLIER*mapGene(5, 0.1, 1)*5;
     seed =              (int)mapGene(6, 2, 1000);
     initialDirection = new PVector(mapGene(7, -1, 1), mapGene(8, -1, 1));
-    accelerationFrequency = (int)mapGene(9, 5, 10);
-    turnSequence = new float[20];
-    for(int i = 10; i < 10+turnSequence.length;i++){
-      turnSequence[i-10] = map(genes[i], 0, 1, -1, 1); 
-    }
+    noiseOffset = (int)mapGene(9, 0, 10000);
   }
 
   void move() {
     stillMoving =  true;
-
     if (firstFrame) {
-      accelerationAngle=initialDirection.heading();
+      statringFrameCount = frameCount;
+      //acceleration.rotate(initialDirection.heading());
       firstFrame=false;
     }
 
     noiseSeed(seed);
-    float rotationDirection = turnSequence[frameCount%turnSequence.length];
+    float rotationDirection = map(noise(noiseOffset + noiseLocation), 0, 1, -1, 1);
     float thisTurn = 0;
-    if(rotationDirection>0){
+    if (rotationDirection>0) {
       thisTurn = rotationSpeed*rotationDirection;
-    }else{
+    } else {
       thisTurn = TWO_PI+(rotationSpeed*rotationDirection);
     }
+    noiseLocation+=100;
+
     lastTurn = thisTurn;
-    accelerationAngle = thisTurn;
+    accelerationAngle += thisTurn;
 
-
-    if (frameCount%accelerationFrequency==0) {
-      acceleration.x = accelerationForce * cos(accelerationAngle);
-      acceleration.y = accelerationForce * sin(accelerationAngle);
-    }
-
-    //velocity.setMag(maximumVelocity);
-
+    acceleration.x += accelerationForce * cos(accelerationAngle);
+    acceleration.y += accelerationForce * sin(accelerationAngle);
+    
     velocity.add(acceleration);
     velocity.limit(maximumVelocity);
-    //if(PVector.add(velocity, acceleration).mag() < maximumVelocity){
-    //  velocity.add(acceleration);
-    //}else{
-    //  velocity.setMag(maximumVelocity);
-    //}
 
     location.add(velocity);
   }
@@ -138,9 +131,9 @@ class Creature {
   void mutate(float lastFitness) {
     float mutation = 0;
 
-    switch(mutationType) {
+    switch(MUTATION_TYPE) {
     case "exponential-random":
-      mutation = exp(-5*lastFitness)/2-random(0.15);
+      mutation = exp(-5*lastFitness)/2 - random(exp(-5*lastFitness)/5);
       break;
     case "exponential":
       mutation = exp(-5*lastFitness)/2;
@@ -149,7 +142,7 @@ class Creature {
       mutation = 0.2;
       break;
     case "random":
-      mutation = random(0.05, 0.1);
+      mutation = random(0.0001);
       break;
     case "no":
       mutation = 0;
@@ -228,29 +221,47 @@ class Creature {
     return betweenX && betweenY;
   }
 
-  void checkOverlap() {
-    //for(Creature creature : creatures){
-    //  if(creature.isVisible()){
-    //    if(dist(creature.getLocation().x, creature.getLocation().y, location.x, location.y) < 3){
-    //      visible = false;
-    //      return;
-    //    }
-    //  }
-    //}
-    visible = true;
+  void checkVisibleGoal(){
+    float x1 = direction.x;
+    float y1 = direction.y;
+    float x2 = location.x;
+    float y2 = location.y;
+
+    for(Wall wall : walls){
+      for(int i = 0; i < 4; i++){
+        PVector corner1 = wall.getShape().getVertex(i);
+        PVector corner2 = wall.getShape().getVertex((i+1)%4);
+
+        float x3 = corner1.x; 
+        float y3 = corner1.y;
+        float x4 = corner2.x;   
+        float y4 = corner2.y;
+
+        float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+        float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+        if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
+          goalNotVisiblePunishment=-3;
+          return;
+        }
+      }
+    }
   }
 
-
   void check() {
-    if (dist(location.x, location.y, direction.x, direction.y)<2) {
+    if (getFitness()>0.997) {
+      //solution = new Creature(getGenes());
+      //solved = true;
       println("Fitness: " + getFitness());
-      
+
       print("{");
-      for (Float gene : genes) {
-        println(gene + ", ");
+      for (int i = 0; i < genes.length; i++) {
+        print(genes[i]);
+        if(i<genes.length-1){
+          print(", \n");
+        }
       }
-      println("}");
-      
+      println("};");
+
       exit();
     }
   }
@@ -271,17 +282,8 @@ class Creature {
     return initialDirection;
   }
 
-  float getAccelerationFrequency() {
-    return accelerationFrequency;
-  }
-
-  String getTurnSequenceString(){
-    String TSS = "[";
-    for(float turn : turnSequence){
-      TSS = TSS + ((turn<0)?"L":"R");
-    }
-    TSS = TSS+"]";
-    return TSS;
+  float getNoiseOffset() {
+    return noiseOffset;
   }
 
   float getLastTurn() {

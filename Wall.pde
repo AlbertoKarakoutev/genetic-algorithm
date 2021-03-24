@@ -3,15 +3,17 @@ class Wall{
   PVector location;
   PVector size;
   
+  PShape wallShape;
+
   public Wall(PVector location, PVector size){
     this.location = location;
     this.size = size;
+    wallShape = createShape(RECT, location.x, location.y, size.x, size.y);
   }
   
   void show(){
     pushStyle();
-    fill(100);
-    rect(location.x, location.y, size.x, size.y);
+    shape(wallShape);
     popStyle();
   }
   
@@ -23,4 +25,7 @@ class Wall{
     return size;
   }
   
+  PShape getShape(){
+    return wallShape;
+  }
 }
