@@ -10,9 +10,9 @@ class Creature { //<>//
   boolean visible = true;
 
   static final int genePoolSize = 9;
-  int collisionPunishment = 0;
-  int offScreenPunishment = 0;
-  int goalNotVisiblePunishment = 0;
+  float collisionPunishment = 0;
+  float offScreenPunishment = 0;
+  float goalNotVisiblePunishment = 0;
 
   float accelerationAngle = 0;
   float lastTurn;
@@ -28,7 +28,8 @@ class Creature { //<>//
 
   int statringFrameCount;
 
-  float mutationAmount;
+  double mutationAmount;
+
 
   /*
     Initialization constructor that creates a random gene array.
@@ -43,6 +44,7 @@ class Creature { //<>//
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
+  
 
   /*
     A no-mutation constructor for the viewing of the "solution" of the algorithm.
@@ -54,6 +56,7 @@ class Creature { //<>//
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
+
 
   /*
     An inheritance constructor that evolves the children 
@@ -67,6 +70,7 @@ class Creature { //<>//
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
+
 
   /*
     Calculates the "Fitness" function for a creature at a given point.
@@ -83,7 +87,7 @@ class Creature { //<>//
     float dBR = dist(width, height, direction.x, direction.y);
     float dBL = dist(0, height, direction.x, direction.y);
     float dMax = max(max(dTL, dTR), max(dBL, dBR));
-    float distanceReward = map(d, dMax, 0, 0, 4);          //Max=1
+    float distanceReward = map(d, dMax, 0, 0, DISTANCE_REWARD_MAX);         
     checkVisibleGoal();
     float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
     //float fitnessMapped = map(fitness, -1, 1, 0, 1);
@@ -106,6 +110,7 @@ class Creature { //<>//
     seed =              (int)mapGene(6, 2, 1000);
     initialDirection = new PVector(mapGene(7, -1, 1), mapGene(8, -1, 1));
   }
+
 
   /*
     Calculates the rotation of the acceleration vector, 
@@ -144,26 +149,27 @@ class Creature { //<>//
     location.add(velocity);
   }
 
+
   /*
     Based on the mutation type, calculates the mutation amount for the creature.
     After that, there is a 50/50 chance that a gene will mutate by that given amount.
     If after mutation a gene has clipped the (0;1) limit, re-maps the gene value in (0;1).
   */
   void mutate(float lastFitness) {
-    float mutation = 0;
+    double mutation = 0;
 
     switch(MUTATION_TYPE) {
     case "exponential-random":
-      mutation = exp(-5*lastFitness)/2 - random(0.001);
+      mutation = exp(-5*lastFitness)/100 - random(0.0004);
       break;
     case "exponential":
-      mutation = exp(-5*lastFitness)/2;
+      mutation = exp(-5*lastFitness)/100;
       break;
     case "constant":
-      mutation = 0.001;
+      mutation = 0.0004d;
       break;
     case "random":
-      mutation = random(0.001);
+      mutation = random(0.0004);
       break;
     case "no":
       mutation = 0;
@@ -175,17 +181,18 @@ class Creature { //<>//
 
       boolean willMutate = random(1) > 0.5; 
 
-      if (willMutate) {
+      //if (willMutate) {
         if (genes[i] > 0.5) {
-          genes[i] -= mutation;
+          genes[i] -= (float)mutation;
         } else {
-          genes[i] += mutation;
+          genes[i] += (float)mutation;
         }
-      }
+     // }
       if (genes[i]<0)genes[i]=abs(genes[i]);
       if (genes[i]>1)genes[i]=2-genes[i];
     }
   }
+
 
   /*
     Draws the creature to the screen.
@@ -233,7 +240,7 @@ class Creature { //<>//
     boolean outX = location.x+8>width || location.x-8<0;
     boolean outY = location.y+8>height || location.y-8<0;
     if (outX || outY) {
-      offScreenPunishment = -1;
+      offScreenPunishment = OFF_SCREEN_PUNISHMENT;
     }
     return outX || outY;
   }
@@ -246,7 +253,7 @@ class Creature { //<>//
     boolean betweenX = location.x+8>wall.getLocation().x && location.x-8<wall.getLocation().x+wall.getSize().x;
     boolean betweenY = location.y+8>wall.getLocation().y && location.y-8<wall.getLocation().y+wall.getSize().y;
     if (betweenX && betweenY) {
-      collisionPunishment = -1;
+      collisionPunishment = WALL_PUNISHMENT;
     }
     return betweenX && betweenY;
   }
@@ -274,7 +281,7 @@ class Creature { //<>//
         float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-          goalNotVisiblePunishment=-2;
+          goalNotVisiblePunishment=GOAL_NOT_VISIBLE_PUNISHMENT;
           return;
         }
       }
@@ -286,7 +293,7 @@ class Creature { //<>//
     If it has, prints the creature's genes and exits the simulation.
   */
   void check() {
-    if (getFitness()>3.997) {
+    if (getFitness()>ACCURACY*DISTANCE_REWARD_MAX) {
       //solution = new Creature(getGenes());
       //solved = true;
       println("Fitness: " + getFitness());
@@ -304,7 +311,7 @@ class Creature { //<>//
     }
   }
 
-  float getMutationAmount() {
+  double getMutationAmount() {
     return mutationAmount;
   }
 
