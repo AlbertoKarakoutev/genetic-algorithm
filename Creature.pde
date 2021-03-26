@@ -163,6 +163,8 @@ class Creature { //<>//
     float distanceReward = map(d, dMax, 0, 0, DISTANCE_REWARD_MAX);         
     if(wallIsBlocking(direction)){
       goalNotVisiblePunishment=GOAL_NOT_VISIBLE_PUNISHMENT;
+    }else{
+      goalNotVisiblePunishment=0;
     }
     float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
     //float fitnessMapped = map(fitness, -1, 1, 0, 1);
@@ -207,7 +209,7 @@ class Creature { //<>//
       mutation = 0.0004d;
       break;
     case "random":
-      mutation = random(0.0004);
+      mutation = random(0.004);
       break;
     case "no":
       mutation = 0;
@@ -333,6 +335,8 @@ class Creature { //<>//
     boolean outY = location.y+8>height || location.y-8<0;
     if (outX || outY) {
       offScreenPunishment = OFF_SCREEN_PUNISHMENT;
+    }else{
+      offScreenPunishment = 0;
     }
     return outX || outY;
   }
@@ -431,6 +435,22 @@ class Creature { //<>//
 
   PVector getLocation() {
     return location;
+  }
+
+  String getPunishments(){
+   return "Walls->" + collisionPunishment + ",\n                        Off-Screen->" + offScreenPunishment + ",\n                        Visibility->" + goalNotVisiblePunishment;
+  }
+
+  float getWallPunishment(){
+    return collisionPunishment;
+  }
+  
+  float getOffScreenPunishment(){
+    return offScreenPunishment; 
+  }
+
+  float getGoalPunishment(){
+    return goalNotVisiblePunishment;
   }
 
   void setCollisionPunishment(float collisionPunishment) {

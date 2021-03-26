@@ -1,16 +1,17 @@
-import java.util.Arrays; //<>// //<>//
+import java.util.Arrays; //<>// //<>// //<>//
 import java.util.List;
 
 float[] solutionGenes = 
-  {0.6915033, 
-  0.17512059, 
-  0.7665905, 
-  0.054292083, 
-  0.32253367, 
-  0.201096, 
-  0.4908815, 
-  0.7434858, 
-  0.3340519};
+{0.80716825, 
+0.8848576, 
+0.5589324, 
+0.9724306, 
+0.749989, 
+0.77050936, 
+0.67556554, 
+0.8379837, 
+0.7916594};
+
 
 int timer;
 int generation;
@@ -21,12 +22,12 @@ boolean pause = false;
 float bestFitness;
 
 //Algorithm parameters
-static final int POPULATION_SIZE = 100;
+static final int POPULATION_SIZE = 200;
 static final int TIME_PER_GENERATION = 10;
 static final float SPEED_MULTIPLIER = 2;
-static final boolean SOLVED = false;
+static final boolean SOLVED = true;
 static final String MUTATION_TYPE = "random"; /* [ exponential / exponential-random / random / constant / no ] */
-static final float ACCURACY = 99.6; //%
+static final float ACCURACY = 0.98; //%
 static final float WALL_PUNISHMENT = -0.5;
 static final float OFF_SCREEN_PUNISHMENT = -1;
 static final float GOAL_NOT_VISIBLE_PUNISHMENT =-2;
@@ -64,8 +65,8 @@ void setup() {
   }
 
   walls = new ArrayList<Wall>();
-  //walls.add(new Wall(new PVector(width / 2, 2 * height / 4), new PVector(30,(height / 4))));
-  walls.add(new Wall(new PVector(2, height/3), new PVector(width/2, 30)));
+  walls.add(new Wall(new PVector(3*width/4, height/3), new PVector(30,(height / 6))));
+  walls.add(new Wall(new PVector(2, height/3), new PVector(3*width/4, 30)));
 }
 
 void draw() {
@@ -105,7 +106,7 @@ void draw() {
   text("Generations: " + generation, 0, 40);
   text("Population size: " + POPULATION_SIZE, 0, 60);
   popStyle();
- //<>//
+
   if (generation > 0) {
     text("Overall best fitness: " + bestFitness, 0, 80);
     text("Last generation's top performer: ", 0, 100);
@@ -162,6 +163,10 @@ void draw() {
     }
   } else {
     creatureInfo(solution);
+    pushStyle();
+    textSize(50);
+    text("VIEWING SOLUTION", width/2-250, height-100);
+    popStyle();
     boolean wallCollision = false;
     for (Wall wall : walls) {
       if (solution.hasCollided(wall, solution.getLocation())) {
@@ -179,7 +184,7 @@ void draw() {
 
   if (mousePressed) {
     if (mouseButton == LEFT) {
-      //if(!creatureSelected){
+      if (newPosition != null) {
         pushStyle();
         if (mouseX - newPosition.x < 0 || mouseY - newPosition.y < 0) { 
           fill(255, 0, 0, 200);
@@ -189,7 +194,7 @@ void draw() {
         strokeWeight(2);
         rect(newPosition.x, newPosition.y, mouseX - newPosition.x, mouseY - newPosition.y);
         popStyle();
-      //}
+      }
     }
   }
 }
@@ -200,10 +205,13 @@ void creatureInfo(Creature best) {
 
   text("  Seed: " + best.getSeed(), 0, 120);
   text("  Fitness: " + best.getFitness(), 0, 140);
-  text("  Acc. force: " + best.getAccelerationForce(), 0, 160);
-  text("  Max. velocity : " + best.getMaximumVelocity(), 0, 180);
-  text("  Mutation amount: " + best.getMutationAmount(), 0, 200);
-  text("  Initial direction: " + best.getInitialDirection(), 0, 220);
+  text("  Wall punishment: " + best.getWallPunishment(), 0, 160);
+  text("  Off-screen punishment: " + best.getOffScreenPunishment(), 0, 180);
+  text("  Goal punishment: " + best.getGoalPunishment(), 0, 200);
+  text("  Acc. force: " + best.getAccelerationForce(), 0, 220);
+  text("  Max. velocity : " + best.getMaximumVelocity(), 0, 240);
+  text("  Mutation amount: " + best.getMutationAmount(), 0, 260);
+  text("  Initial direction: " + best.getInitialDirection(), 0, 280);
 }
 
 void mousePressed() {
@@ -234,15 +242,17 @@ void mousePressed() {
 
 void mouseReleased() {
   if (mouseButton == LEFT) {
-    newPositionSet = false;
+    if (newPosition != null) {
+      newPositionSet = false;
 
-    float mouse_x = (mouseX<2) ? 2 : mouseX;
-    mouse_x = (mouseX>width - 2) ? width - 2 : mouseX;
-    float mouse_y = (mouseY<2) ? 2 : mouseY;
-    mouse_y = (mouseY>height - 2) ? height - 2 : mouseY;
-    if (mouseX - newPosition.x > 0 && mouseY - newPosition.y > 0) {
-      newSize = new PVector(mouse_x - newPosition.x, mouse_y - newPosition.y);
-      walls.add(new Wall(newPosition, newSize));
+      float mouse_x = (mouseX<2) ? 2 : mouseX;
+      mouse_x = (mouseX>width - 2) ? width - 2 : mouseX;
+      float mouse_y = (mouseY<2) ? 2 : mouseY;
+      mouse_y = (mouseY>height - 2) ? height - 2 : mouseY;
+      if (mouseX - newPosition.x > 0 && mouseY - newPosition.y > 0) {
+        newSize = new PVector(mouse_x - newPosition.x, mouse_y - newPosition.y);
+        walls.add(new Wall(newPosition, newSize));
+      }
     }
   }
 }
