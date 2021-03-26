@@ -21,11 +21,11 @@ boolean pause = false;
 float bestFitness;
 
 //Algorithm parameters
-static final int POPULATION_SIZE = 300;
+static final int POPULATION_SIZE = 100;
 static final int TIME_PER_GENERATION = 10;
 static final float SPEED_MULTIPLIER = 2;
 static final boolean SOLVED = false;
-static final String MUTATION_TYPE = "no"; /* [ exponential / exponential-random / random / constant / no ] */
+static final String MUTATION_TYPE = "random"; /* [ exponential / exponential-random / random / constant / no ] */
 static final float ACCURACY = 99.6; //%
 static final float WALL_PUNISHMENT = -0.5;
 static final float OFF_SCREEN_PUNISHMENT = -1;
@@ -48,7 +48,6 @@ boolean newPositionSet = false;
 void setup() {
 
   size(1000, 1000, P2D);
-
   direction = new PVector(width / 2, 40);
 
   bestFitness = 0;
@@ -116,7 +115,8 @@ void draw() {
     for (Creature creature : creatures) {
       boolean wallCollision = false;
       for (Wall wall : walls) {
-        if (creature.hasCollided(wall)) {
+        if (creature.hasCollided(wall, creature.getLocation())) {
+          creature.setCollisionPunishment(WALL_PUNISHMENT);
           wallCollision = true;
         }
       }
@@ -164,7 +164,7 @@ void draw() {
     creatureInfo(solution);
     boolean wallCollision = false;
     for (Wall wall : walls) {
-      if (solution.hasCollided(wall)) {
+      if (solution.hasCollided(wall, solution.getLocation())) {
         wallCollision = true;
       }
     }
@@ -179,15 +179,17 @@ void draw() {
 
   if (mousePressed) {
     if (mouseButton == LEFT) {
-      pushStyle();
-      if (mouseX - newPosition.x < 0 || mouseY - newPosition.y < 0) { 
-        fill(255, 0, 0, 200);
-      } else {
-        fill(100);
-      }
-      strokeWeight(2);
-      rect(newPosition.x, newPosition.y, mouseX - newPosition.x, mouseY - newPosition.y);
-      popStyle();
+      //if(!creatureSelected){
+        pushStyle();
+        if (mouseX - newPosition.x < 0 || mouseY - newPosition.y < 0) { 
+          fill(255, 0, 0, 200);
+        } else {
+          fill(100);
+        }
+        strokeWeight(2);
+        rect(newPosition.x, newPosition.y, mouseX - newPosition.x, mouseY - newPosition.y);
+        popStyle();
+      //}
     }
   }
 }
