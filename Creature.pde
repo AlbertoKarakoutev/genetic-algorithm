@@ -9,14 +9,13 @@ class Creature { //<>//
   boolean firstFrame = true;
   boolean visible = true;
 
-  static final int genePoolSize = 9;
+  static final int genePoolSize = 11;
   float collisionPunishment = 0;
   float offScreenPunishment = 0;
   float goalNotVisiblePunishment = 0;
 
   float accelerationAngle = 0;
   float lastTurn;
-  float noiseLocation = 0;
 
   //Genes:
   color col;                //0,1,2
@@ -25,6 +24,8 @@ class Creature { //<>//
   float maximumVelocity;    //5
   int seed;                 //6
   PVector initialDirection; //7,8
+  int rayLength;            //9
+  float noiseLocation;      //10
 
   int statringFrameCount;
 
@@ -33,14 +34,14 @@ class Creature { //<>//
 
   /*
     Initialization constructor that creates a random gene array.
-   */
+  */
   public Creature() {
     genes = new float[genePoolSize];
     for (int i = 0; i < genePoolSize; i++) {
       genes[i] = random(1);
     }
     readGenes();
-    location = new PVector(150, height/2);
+    location = new PVector(10, height/2);
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
@@ -48,11 +49,11 @@ class Creature { //<>//
 
   /*
     A no-mutation constructor for the viewing of the "solution" of the algorithm.
-   */
+  */
   public Creature(float[] genes) {
     this.genes = genes;
     readGenes();
-    location = new PVector(150, height/2);
+    location = new PVector(100, height/2);
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
@@ -60,13 +61,13 @@ class Creature { //<>//
 
   /*
     An inheritance constructor that evolves the children 
-   from their parents' genes and mutates them.
-   */
+    from their parents' genes and mutates them.
+  */
   public Creature(float[] genes, float fitness) {
     this.genes = genes;
     mutate(fitness);
     readGenes();
-    location = new PVector(150, height/2);
+    location = new PVector(100, height/2);
     velocity = new PVector();
     acceleration = new PVector(0, 1);
   }
@@ -74,11 +75,11 @@ class Creature { //<>//
 
   /*
     Calculates the rotation of the acceleration vector, 
-   based on a Perlin noise function and maps it in the range(-1;1). Multiplies 
-   that by the angle of rotation per frame(rotationSpeed). Aggregates that to the 
-   acceleration angle and sets the acceleration. Adds that to the velocity, 
-   and the velocity to the location.
-   */
+    based on a Perlin noise function and maps it in the range(-1;1). Multiplies 
+    that by the angle of rotation per frame(rotationSpeed). Aggregates that to the 
+    acceleration angle and sets the acceleration. Adds that to the velocity, 
+    and the velocity to the location.
+  */
   void move() {
     stillMoving =  true;
     if (firstFrame) {
@@ -110,13 +111,14 @@ class Creature { //<>//
     velocity.limit(maximumVelocity);
 
     location.add(velocity);
+    acceleration.set(0, 0);
   }
 
 
   /*
     Draws the creature to the screen.
-   If it is the top performer, marks it as such.
-   */
+    If it is the top performer, marks it as such.
+  */
   void show() {
 
     boolean top = true;
@@ -147,12 +149,12 @@ class Creature { //<>//
 
   /*
     Calculates the "Fitness" function for a creature at a given point.
-   The fitness function is calculated by subtracting the penalties for:
-   - A wall collision (0;-1)
-   - An out of screen punishment (0;-1)
-   - A goal visibility punishment (0;-2)
-   And then adding the distance to the goal reward (0;4).
-   */
+    The fitness function is calculated by subtracting the penalties for:
+    - A wall collision (0;-1)
+    - An out of screen punishment (0;-1)
+    - A goal visibility punishment (0;-2)
+    And then adding the distance to the goal reward (0;4).
+  */
   float getFitness() {
     float d = dist(location.x, location.y, direction.x, direction.y);
     float dTL = dist(0, 0, direction.x, direction.y);
@@ -161,9 +163,9 @@ class Creature { //<>//
     float dBL = dist(0, height, direction.x, direction.y);
     float dMax = max(max(dTL, dTR), max(dBL, dBR));
     float distanceReward = map(d, dMax, 0, 0, DISTANCE_REWARD_MAX);         
-    if(wallIsBlocking(direction)){
+    if (wallIsBlocking(direction)!=null) {
       goalNotVisiblePunishment=GOAL_NOT_VISIBLE_PUNISHMENT;
-    }else{
+    } else {
       goalNotVisiblePunishment=0;
     }
     float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
@@ -174,8 +176,8 @@ class Creature { //<>//
 
   /*
     Interprets and maps the genes from the genes[] array 
-   and assigns them to their appropriate variables.
-   */
+    and assigns them to their appropriate variables.
+  */
   void readGenes() {
     int r = (int)mapGene(0, 0, 255);
     int g = (int)mapGene(1, 0, 255);
@@ -187,14 +189,16 @@ class Creature { //<>//
     maximumVelocity =   SPEED_MULTIPLIER*mapGene(5, 0.1, 1)*5;
     seed =              (int)mapGene(6, 2, 1000);
     initialDirection = new PVector(mapGene(7, -1, 1), mapGene(8, -1, 1));
+    rayLength = (int)mapGene(9, 30, 50);
+    noiseLocation = mapGene(10, 0, 300);
   }
-  
-  
+
+
   /*
     Based on the mutation type, calculates the mutation amount for the creature.
-   After that, there is a 50/50 chance that a gene will mutate by that given amount.
-   If after mutation a gene has clipped the (0;1) limit, re-maps the gene value in (0;1).
-   */
+    After that, there is a 50/50 chance that a gene will mutate by that given amount.
+    If after mutation a gene has clipped the (0;1) limit, re-maps the gene value in (0;1).
+  */
   void mutate(float lastFitness) {
     double mutation = 0;
 
@@ -221,13 +225,13 @@ class Creature { //<>//
 
       boolean willMutate = random(1) > 0.5; 
 
-      //if (willMutate) {
-      if (genes[i] > 0.5) {
-        genes[i] -= (float)mutation;
-      } else {
-        genes[i] += (float)mutation;
+      if (willMutate) {
+        if (genes[i] > 0.5) {
+          genes[i] -= (float)mutation;
+        } else {
+          genes[i] += (float)mutation;
+        }
       }
-      // }
       if (genes[i]<0)genes[i]=abs(genes[i]);
       if (genes[i]>1)genes[i]=2-genes[i];
     }
@@ -235,37 +239,55 @@ class Creature { //<>//
 
 
   /*
-    Goes around all the cast rays and sees if
-    a ray is intersecting a wall. Then, finds a ray
-    that is clear of a wall and adds it's value to the acceleration.
+    Determines whether a creature is about to hit a wall. If it is, it calculates 
+    the wall side, which is about to be hit. Creates a vector, perpendicular to that side
+    facing away from it, with a magninute inversely proportional to the
+    distance to that side. Adds that vector to the creature's acceleration.
   */
   void avoidWalls() {
-    boolean headingForAWall = false;
-    PVector[] rays = rays(50);
-    for (PVector collisionRay : rays) {
-      if(wallIsBlocking(PVector.add(location, collisionRay))){
-            headingForAWall = true;
-            break;
-          }
-    }
-    
-    if (headingForAWall) {
-      for (int i = 0; i < rays.length; i++) {
-        if(!wallIsBlocking(PVector.add(location, rays[i]))){
-          PVector vectorOffset = rays[(i+1)%rays.length].copy();
-          vectorOffset.setMag(accelerationForce*3);
-          acceleration.set(0, 0);
-          acceleration.add(vectorOffset);
-          return;
+    PVector velocityCheck = PVector.mult(velocity, rayLength/2);
+    PVector[] collisionLine = null;
+    if (wallIsBlocking(PVector.add(location, velocityCheck))!=null) {
+
+      collisionLine = wallIsBlocking(PVector.add(location, velocityCheck));
+      float intersectionAngle = (velocity.heading() > 0) ? velocity.heading() : TWO_PI+velocity.heading();
+      PVector vectorOffset = new PVector();
+
+      if (collisionLine[0].x == collisionLine[1].x) {
+        //For vertical walls
+        float dist = dist(location.x, location.y, collisionLine[0].x, location.y);
+        float strength = map(dist, velocityCheck.mag(), 0, 0, 5*accelerationForce);
+        if (intersectionAngle < PI/2 || (intersectionAngle >= 3*PI/2 && intersectionAngle <= TWO_PI)) {
+          //Moving right
+          vectorOffset.set(-strength, 0);
+        } else {
+          //Moving left
+          vectorOffset.set(strength, 0);
+        }
+      } else {
+        //For horizontal walls
+        float dist = dist(location.x, location.y, location.x, collisionLine[0].y);
+        float strength = map(dist, velocityCheck.mag(), 0, 0, 5*accelerationForce);
+        if (intersectionAngle >=  PI) {
+          //Moving up
+          vectorOffset.set(0, strength);
+        } else {
+          //Moving down
+          vectorOffset.set(0, -strength);
         }
       }
+      
+      //acceleration.set(0, 0);
+      acceleration.add(vectorOffset);
     }
   }
 
 
   /*
-    Checks whether any ray is outside the screen bounds.
-    If it is, offsets the acceleration by a mapped value .
+    Checks whether a creature is about to hit a screen boundry. Creates a vector, 
+    perpendicular to that boundry facing away from it, with a magninute that is
+    inversely proportional to the distance to that boundry. 
+    Adds that vector to the creature's acceleration.
   */
   void avoidBounds() {
     float dLeft = dist(location.x, location.y, 0, location.y);
@@ -281,41 +303,24 @@ class Creature { //<>//
       float dist1 = min(dLeft, dRight);
       float dist2 = min(dTop, dBottom);
       float dist = min(dist1, dist2);
-      for (PVector ray : rays(min)) {
-        PVector newLocation = PVector.add(location, ray);
-        boolean aimingTowardsX = (newLocation.x <= min || newLocation.x >= width-min);
-        boolean aimingTowardsY = (newLocation.y <= min || newLocation.y >= height-min);
-        if (!aimingTowardsX && !aimingTowardsY) {
 
-          PVector vectorOffset = ray.copy();
-          vectorOffset.setMag(map(dist, min, 0, 0, accelerationForce*3));
-
-          acceleration.set(0, 0);
-          acceleration.add(vectorOffset);
-          break;
-        }
+      PVector vectorOffset = new PVector();
+      if (dist==dLeft) {
+        float strength = map(dist, min, 0, 0, 5*accelerationForce);
+        vectorOffset.set(strength, 0);
+      } else if (dist==dRight) {
+        float strength = map(dist, min, 0, 0, 5*accelerationForce);
+        vectorOffset.set(-strength, 0);
+      } else if (dist==dTop) {
+        float strength = map(dist, min, 0, 0, 5*accelerationForce);
+        vectorOffset.set(0, strength);
+      } else if (dist==dBottom) {
+        float strength = map(dist, min, 0, 0, 5*accelerationForce);
+        vectorOffset.set(0, -strength);
       }
+      //acceleration.set(0, 0);
+      acceleration.add(vectorOffset);
     }
-  }
-
-
-  /*
-    A vector array, originating from the creatuer's
-    position with a fixed radious and count.
-  */
-  PVector[] rays(int rayLength) {
-
-    int numViewDirections = 15;
-    PVector[] directions = new PVector[numViewDirections];
-
-    for (int i = 0; i < numViewDirections; i++) {
-      float theta = i * (TWO_PI/numViewDirections);
-      float x = sin(theta);
-      float y = cos(theta);
-
-      directions[i] = new PVector(x*rayLength, y*rayLength);
-    }
-    return directions;
   }
 
 
@@ -326,25 +331,24 @@ class Creature { //<>//
     return map(genes[gene], 0, 1, lower, upper);
   }
 
+
   /*
     Checks whether a creature is off-screen.
-   If it is, sets the punishment to -1.
-   */
+    If it is, sets the punishment.
+  */
   boolean isOffScreen() {
     boolean outX = location.x+8>width || location.x-8<0;
     boolean outY = location.y+8>height || location.y-8<0;
     if (outX || outY) {
       offScreenPunishment = OFF_SCREEN_PUNISHMENT;
-    }else{
-      offScreenPunishment = 0;
     }
     return outX || outY;
   }
 
+
   /*
     Checks whether a creature has hit a wall.
-   If it is, sets the punishment to -1.
-   */
+  */
   boolean hasCollided(Wall wall, PVector inputLocation) {
     boolean betweenX = inputLocation.x+8>wall.getLocation().x && inputLocation.x-8<wall.getLocation().x+wall.getSize().x;
     boolean betweenY = inputLocation.y+8>wall.getLocation().y && inputLocation.y-8<wall.getLocation().y+wall.getSize().y;
@@ -353,16 +357,18 @@ class Creature { //<>//
 
 
   /*
-    Checks whether a creature can see the goal.
-   If it can't, sets the punishment to -1.
-   */
-  boolean wallIsBlocking(PVector goal) {
+    Checks whether a creature can "see" the vector "goal". If it can't,
+    return's the two points, forming the line that is blocking the creature's
+    "vision".
+  */
+  PVector[] wallIsBlocking(PVector goal) {
     float x1 = goal.x;
     float y1 = goal.y;
     float x2 = location.x;
     float y2 = location.y;
 
     for (Wall wall : walls) {
+      List<PVector[]> parallelWalls = new ArrayList<PVector[]>();
       for (int i = 0; i < 4; i++) {
         PVector corner1 = wall.getShape().getVertex(i);
         PVector corner2 = wall.getShape().getVertex((i+1)%4);
@@ -375,17 +381,33 @@ class Creature { //<>//
         float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
         if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-          return true;
+          PVector otherCorner1 = wall.getShape().getVertex((i+2)%4);
+          PVector otherCorner2 = wall.getShape().getVertex((i+3)%4);
+          float distCorner1 = dist(location.x, location.y, corner1.x, corner1.y);
+          float distCorner2 = dist(location.x, location.y, corner2.x, corner2.y);
+          float distCorner3 = dist(location.x, location.y, otherCorner1.x, otherCorner1.y);
+          float distCorner4 =  dist(location.x, location.y, otherCorner2.x, otherCorner2.y);
+          float minDist = min(min(distCorner1, distCorner3), min(distCorner2, distCorner4));
+          if (minDist == distCorner1 || minDist == distCorner2) {
+            PVector[] line = {corner1, corner2};
+            return line;
+          } else {
+            PVector[] closerLine = {otherCorner1, otherCorner2};
+            return closerLine;
+          }
         }
       }
+      if (parallelWalls.size()>0) {
+      }
     }
-    return false;
+    return null;
   }
+
 
   /*
     Checks if the creature has reached the required fitness value.
-   If it has, prints the creature's genes and exits the simulation.
-   */
+    If it has, prints the creature's genes and exits the simulation.
+  */
   void check() {
     if (getFitness()>ACCURACY*DISTANCE_REWARD_MAX) {
       //solution = new Creature(getGenes());
@@ -437,19 +459,19 @@ class Creature { //<>//
     return location;
   }
 
-  String getPunishments(){
-   return "Walls->" + collisionPunishment + ",\n                        Off-Screen->" + offScreenPunishment + ",\n                        Visibility->" + goalNotVisiblePunishment;
+  String getPunishments() {
+    return "Walls->" + collisionPunishment + ",\n                        Off-Screen->" + offScreenPunishment + ",\n                        Visibility->" + goalNotVisiblePunishment;
   }
 
-  float getWallPunishment(){
+  float getWallPunishment() {
     return collisionPunishment;
   }
-  
-  float getOffScreenPunishment(){
-    return offScreenPunishment; 
+
+  float getOffScreenPunishment() {
+    return offScreenPunishment;
   }
 
-  float getGoalPunishment(){
+  float getGoalPunishment() {
     return goalNotVisiblePunishment;
   }
 

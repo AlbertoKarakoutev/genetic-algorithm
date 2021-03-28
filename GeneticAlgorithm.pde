@@ -2,15 +2,18 @@ import java.util.Arrays; //<>// //<>// //<>//
 import java.util.List;
 
 float[] solutionGenes = 
-{0.80716825, 
-0.8848576, 
-0.5589324, 
-0.9724306, 
-0.749989, 
-0.77050936, 
-0.67556554, 
-0.8379837, 
-0.7916594};
+{0.15165395, 
+0.89238065, 
+0.6051775, 
+0.92024153, 
+0.6571848, 
+0.93734, 
+0.09931028, 
+0.53887534, 
+0.26249295, 
+0.24856907, 
+0.3147244};
+
 
 
 int timer;
@@ -22,10 +25,10 @@ boolean pause = false;
 float bestFitness;
 
 //Algorithm parameters
-static final int POPULATION_SIZE = 200;
-static final int TIME_PER_GENERATION = 10;
+static final int POPULATION_SIZE = 100;
+static final int TIME_PER_GENERATION = 15;
 static final float SPEED_MULTIPLIER = 2;
-static final boolean SOLVED = true;
+static final boolean SOLVED = false;
 static final String MUTATION_TYPE = "random"; /* [ exponential / exponential-random / random / constant / no ] */
 static final float ACCURACY = 0.98; //%
 static final float WALL_PUNISHMENT = -0.5;
@@ -37,10 +40,11 @@ Creature solution;
 Creature previousTop;
 Creature selected;
 Creature[] creatures;
+List<Creature> generationSolutions;
 
 PVector direction;
 
-//Wall variables
+//Wall variables 
 ArrayList<Wall> walls;
 PVector newPosition;
 PVector newSize;
@@ -59,14 +63,19 @@ void setup() {
   creatures = new Creature[POPULATION_SIZE];
 
   solution = new Creature(solutionGenes);
+  generationSolutions = new ArrayList<Creature>();
 
   for (int i = 0; i < creatures.length; i++) {
     creatures[i] = new Creature();
   }
 
   walls = new ArrayList<Wall>();
-  walls.add(new Wall(new PVector(3*width/4, height/3), new PVector(30,(height / 6))));
   walls.add(new Wall(new PVector(2, height/3), new PVector(3*width/4, 30)));
+  walls.add(new Wall(new PVector(3*width/4, height/3), new PVector(30,(height / 6))));
+  walls.add(new Wall(new PVector(width/6, height/2), new PVector(3*width/4 - width/6, 30)));
+  walls.add(new Wall(new PVector(2, 2*height/3), new PVector(3*width/4, 30)));
+  //walls.add(new Wall(new PVector(3*width/4, 2), new PVector(30,(height / 6))));
+  walls.add(new Wall(new PVector(width/6, height/6), new PVector(3*width/4 - width/6, 30)));
 }
 
 void draw() {
@@ -87,10 +96,8 @@ void draw() {
 
   if (selected!= null) {
     pushMatrix();
-    translate(width / 2, 0);
+    translate(width / 2, -100);
     creatureInfo(selected);
-
-    text("  Last turn: " + selected.getLastTurn() + "rad.", 0, 280);
     popMatrix();
 
     pushStyle();
@@ -113,6 +120,8 @@ void draw() {
     creatureInfo(previousTop);
   }
   if (!SOLVED) {
+    
+    //Move and show all the creatures if they haven't stopped
     for (Creature creature : creatures) {
       boolean wallCollision = false;
       for (Wall wall : walls) {
@@ -122,21 +131,22 @@ void draw() {
         }
       }
       if (!wallCollision && !creature.isOffScreen() && !pause)creature.move();
-
-      //creatures[i].checkOverlap();
       if (creature.isVisible()) {
         creature.show();
       }
       creature.check();
     }
 
+    //Increment the timer every 60 frames
     if (frameCount % (60) == 0 && !pause) {
       timer++;
     }
-
+    
     if (timer % (TIME_PER_GENERATION) >= 1) {
       createdNewGeneration = false;
     }
+    
+    //Create the new generation
     if ((timer % (TIME_PER_GENERATION) == 0 || !stillMoving) && !createdNewGeneration && !pause) {
       selected = null;
       timer = 0;
@@ -161,6 +171,7 @@ void draw() {
         previousTop = top;
       }
     }
+    
   } else {
     creatureInfo(solution);
     pushStyle();
@@ -218,6 +229,7 @@ void mousePressed() {
 
   boolean creatureSelect = false;
   if (mouseButton == LEFT) {
+    //Select a creature
     for (Creature creature : creatures) {
       if (dist(creature.getLocation().x, creature.getLocation().y, mouseX, mouseY) < 5) {
         selected = creature;
@@ -230,6 +242,7 @@ void mousePressed() {
       newPositionSet = true;
     }
   } else if (mouseButton == RIGHT) {
+    //Remove a wall
     for (Wall wall : walls) {
       if (mouseX > wall.getLocation().x && mouseX < wall.getLocation().x + wall.getSize().x && mouseY > wall.getLocation().y && mouseY < wall.getLocation().y + wall.getSize().y) {
         walls.remove(wall);
