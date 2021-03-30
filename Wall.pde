@@ -13,6 +13,7 @@ class Wall{
   
   void show(){
     pushStyle();
+    wallShape.setFill(color(255, 170));
     shape(wallShape);
     popStyle();
   }

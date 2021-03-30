@@ -1,19 +1,18 @@
-import java.util.Arrays; //<>// //<>// //<>//
+import java.util.Arrays; //<>// //<>// //<>// //<>//
 import java.util.List;
 
 float[] solutionGenes = 
-{0.15165395, 
-0.89238065, 
-0.6051775, 
-0.92024153, 
-0.6571848, 
-0.93734, 
-0.09931028, 
-0.53887534, 
-0.26249295, 
-0.24856907, 
-0.3147244};
-
+{0.46112853, 
+0.71683055, 
+0.27781832, 
+0.64979774, 
+0.79611045, 
+0.91712844, 
+0.6563267, 
+0.36130726, 
+0.61638963, 
+0.908544, 
+0.05067657};
 
 
 int timer;
@@ -25,11 +24,12 @@ boolean pause = false;
 float bestFitness;
 
 //Algorithm parameters
-static final int POPULATION_SIZE = 100;
+static final int POPULATION_SIZE = 500;
 static final int TIME_PER_GENERATION = 15;
 static final float SPEED_MULTIPLIER = 2;
-static final boolean SOLVED = false;
-static final String MUTATION_TYPE = "random"; /* [ exponential / exponential-random / random / constant / no ] */
+static final boolean SOLVED = true;
+static final boolean AVOID = true;
+static final String MUTATION_TYPE = "exponential"; /* [ exponential / exponential-random / random / constant / no ] */
 static final float ACCURACY = 0.98; //%
 static final float WALL_PUNISHMENT = -0.5;
 static final float OFF_SCREEN_PUNISHMENT = -1;
@@ -72,9 +72,9 @@ void setup() {
   walls = new ArrayList<Wall>();
   walls.add(new Wall(new PVector(2, height/3), new PVector(3*width/4, 30)));
   walls.add(new Wall(new PVector(3*width/4, height/3), new PVector(30,(height / 6))));
-  walls.add(new Wall(new PVector(width/6, height/2), new PVector(3*width/4 - width/6, 30)));
+  walls.add(new Wall(new PVector(width/4, height/2), new PVector(2*width/4, 30)));
   walls.add(new Wall(new PVector(2, 2*height/3), new PVector(3*width/4, 30)));
-  //walls.add(new Wall(new PVector(3*width/4, 2), new PVector(30,(height / 6))));
+  walls.add(new Wall(new PVector(3*width/4, 2), new PVector(30,(height / 6))));
   walls.add(new Wall(new PVector(width/6, height/6), new PVector(3*width/4 - width/6, 30)));
 }
 

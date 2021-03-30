@@ -11,6 +11,7 @@ all the Creatures are unable to move.
 
 ## Algorithm parameters
 ```java
+static final boolean AVOID ***
 static final boolean SOLVED
 static final float ACCURACY
 static final int POPULATION_SIZE
@@ -24,6 +25,7 @@ static final float GOAL_NOT_VISIBLE_PUNISHMENT
 ```
 ###### \* exponential/exponential-random/random/constant/no
 ###### \*\* _|WALL_PUNISHMENT - OFF_SCREEN_PUNISHMENT - GOAL_NOT_VISIBLE_PUNISHMENT| + 1_
+###### \*\*\* Avoid walls and screen boundaries
 
 ## Creature Initialization
   ```java

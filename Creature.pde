@@ -1,4 +1,4 @@
-class Creature { //<>//
+class Creature { //<>// //<>//
 
   PVector location;
   PVector velocity;
@@ -104,8 +104,10 @@ class Creature { //<>//
     acceleration.x += accelerationForce * cos(accelerationAngle);
     acceleration.y += accelerationForce * sin(accelerationAngle);
 
-    avoidBounds();
-    avoidWalls();
+    if(AVOID){
+      avoidBounds();
+      avoidWalls();
+    }
 
     velocity.add(acceleration);
     velocity.limit(maximumVelocity);
@@ -169,7 +171,7 @@ class Creature { //<>//
       goalNotVisiblePunishment=0;
     }
     float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
-    //float fitnessMapped = map(fitness, -1, 1, 0, 1);
+
     return fitness;
   }
 
@@ -210,7 +212,7 @@ class Creature { //<>//
       mutation = exp(-5*lastFitness)/100;
       break;
     case "constant":
-      mutation = 0.0004d;
+      mutation = 0.0004;
       break;
     case "random":
       mutation = random(0.004);
@@ -223,7 +225,7 @@ class Creature { //<>//
 
     for (int i = 0; i < genePoolSize; i++) {
 
-      boolean willMutate = random(1) > 0.5; 
+      boolean willMutate = random(1) > 0.9; 
 
       if (willMutate) {
         if (genes[i] > 0.5) {
@@ -245,40 +247,52 @@ class Creature { //<>//
     distance to that side. Adds that vector to the creature's acceleration.
   */
   void avoidWalls() {
-    PVector velocityCheck = PVector.mult(velocity, rayLength/2);
-    PVector[] collisionLine = null;
-    if (wallIsBlocking(PVector.add(location, velocityCheck))!=null) {
-
-      collisionLine = wallIsBlocking(PVector.add(location, velocityCheck));
-      float intersectionAngle = (velocity.heading() > 0) ? velocity.heading() : TWO_PI+velocity.heading();
-      PVector vectorOffset = new PVector();
-
-      if (collisionLine[0].x == collisionLine[1].x) {
-        //For vertical walls
-        float dist = dist(location.x, location.y, collisionLine[0].x, location.y);
-        float strength = map(dist, velocityCheck.mag(), 0, 0, 5*accelerationForce);
-        if (intersectionAngle < PI/2 || (intersectionAngle >= 3*PI/2 && intersectionAngle <= TWO_PI)) {
-          //Moving right
-          vectorOffset.set(-strength, 0);
+    for(PVector ray : rays()){
+      if (wallIsBlocking(PVector.add(location, ray))!=null) {
+        
+        
+        PVector[] collisionLine = wallIsBlocking(PVector.add(location, ray));
+        float intersectionAngle = (ray.heading() > 0) ? ray.heading() : TWO_PI+ray.heading();
+        PVector vectorOffset = new PVector();
+        
+        if (collisionLine[0].x == collisionLine[1].x) {
+          //For vertical walls
+          float dist = dist(location.x, location.y, collisionLine[0].x, location.y);
+          float strength = map(dist, rayLength, 0, 0, 4*accelerationForce);
+          
+          if (intersectionAngle < PI/2 || (intersectionAngle >= 3*PI/2 && intersectionAngle <= TWO_PI)) {
+            
+            //Moving right
+            vectorOffset.set(-strength, 0);
+            
+          } else {
+            
+            //Moving left
+            vectorOffset.set(strength, 0);
+            
+          }
         } else {
-          //Moving left
-          vectorOffset.set(strength, 0);
+          
+          //For horizontal walls
+          float dist = dist(location.x, location.y, location.x, collisionLine[0].y);
+          float strength = map(dist, rayLength, 0, 0, 4*accelerationForce);
+          
+          if (intersectionAngle >=  PI) {
+            
+            //Moving up
+            vectorOffset.set(0, strength);
+            
+          } else {
+            
+            //Moving down
+            vectorOffset.set(0, -strength);
+            
+          }
         }
-      } else {
-        //For horizontal walls
-        float dist = dist(location.x, location.y, location.x, collisionLine[0].y);
-        float strength = map(dist, velocityCheck.mag(), 0, 0, 5*accelerationForce);
-        if (intersectionAngle >=  PI) {
-          //Moving up
-          vectorOffset.set(0, strength);
-        } else {
-          //Moving down
-          vectorOffset.set(0, -strength);
-        }
+        
+        acceleration.add(vectorOffset);
+        break;
       }
-      
-      //acceleration.set(0, 0);
-      acceleration.add(vectorOffset);
     }
   }
 
@@ -304,25 +318,42 @@ class Creature { //<>//
       float dist2 = min(dTop, dBottom);
       float dist = min(dist1, dist2);
 
+      float strength = map(dist, min, 0, 0, 5*accelerationForce);
       PVector vectorOffset = new PVector();
       if (dist==dLeft) {
-        float strength = map(dist, min, 0, 0, 5*accelerationForce);
         vectorOffset.set(strength, 0);
       } else if (dist==dRight) {
-        float strength = map(dist, min, 0, 0, 5*accelerationForce);
         vectorOffset.set(-strength, 0);
       } else if (dist==dTop) {
-        float strength = map(dist, min, 0, 0, 5*accelerationForce);
         vectorOffset.set(0, strength);
       } else if (dist==dBottom) {
-        float strength = map(dist, min, 0, 0, 5*accelerationForce);
         vectorOffset.set(0, -strength);
       }
-      //acceleration.set(0, 0);
+      
       acceleration.add(vectorOffset);
     }
   }
 
+
+  /*
+    A vector array, originating from the creatuer's
+    position with a fixed radious and count.
+  */
+  PVector[] rays() {
+
+    int numViewDirections = 8;
+    PVector[] directions = new PVector[numViewDirections];
+
+    for (int i = 0; i < numViewDirections; i++) {
+      float theta = i * (TWO_PI/numViewDirections);
+      float x = sin(theta);
+      float y = cos(theta);
+
+      directions[i] = new PVector(x*rayLength, y*rayLength);
+    }
+    return directions;
+  }
+  
 
   /*
     Re-maps the gene value to a new range.
@@ -368,7 +399,6 @@ class Creature { //<>//
     float y2 = location.y;
 
     for (Wall wall : walls) {
-      List<PVector[]> parallelWalls = new ArrayList<PVector[]>();
       for (int i = 0; i < 4; i++) {
         PVector corner1 = wall.getShape().getVertex(i);
         PVector corner2 = wall.getShape().getVertex((i+1)%4);
@@ -396,8 +426,6 @@ class Creature { //<>//
             return closerLine;
           }
         }
-      }
-      if (parallelWalls.size()>0) {
       }
     }
     return null;
