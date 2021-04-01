@@ -2,17 +2,18 @@ import java.util.Arrays; //<>// //<>// //<>// //<>//
 import java.util.List;
 
 float[] solutionGenes = 
-{0.46112853, 
-0.71683055, 
-0.27781832, 
-0.64979774, 
-0.79611045, 
-0.91712844, 
-0.6563267, 
-0.36130726, 
-0.61638963, 
-0.908544, 
-0.05067657};
+{0.34707582, 
+0.05257368, 
+0.24554408, 
+0.38847464, 
+0.02394408, 
+0.71729773, 
+0.09751338, 
+0.2722419, 
+0.96869606, 
+0.7224445, 
+0.15077323, 
+0.66264176};
 
 
 int timer;
@@ -29,8 +30,8 @@ static final int TIME_PER_GENERATION = 15;
 static final float SPEED_MULTIPLIER = 2;
 static final boolean SOLVED = true;
 static final boolean AVOID = true;
-static final String MUTATION_TYPE = "exponential"; /* [ exponential / exponential-random / random / constant / no ] */
-static final float ACCURACY = 0.98; //%
+static final String MUTATION_TYPE = "exponential-random"; /* [ exponential / exponential-random / random / constant / no ] */
+static final float ACCURACY = 0.98;
 static final float WALL_PUNISHMENT = -0.5;
 static final float OFF_SCREEN_PUNISHMENT = -1;
 static final float GOAL_NOT_VISIBLE_PUNISHMENT =-2;
@@ -131,9 +132,7 @@ void draw() {
         }
       }
       if (!wallCollision && !creature.isOffScreen() && !pause)creature.move();
-      if (creature.isVisible()) {
-        creature.show();
-      }
+      creature.show();
       creature.check();
     }
 
@@ -223,6 +222,7 @@ void creatureInfo(Creature best) {
   text("  Max. velocity : " + best.getMaximumVelocity(), 0, 240);
   text("  Mutation amount: " + best.getMutationAmount(), 0, 260);
   text("  Initial direction: " + best.getInitialDirection(), 0, 280);
+  text("  Avoidance: " + best.getAvoidance(), 0, 300);
 }
 
 void mousePressed() {

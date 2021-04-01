@@ -9,7 +9,7 @@ class Creature { //<>// //<>//
   boolean firstFrame = true;
   boolean visible = true;
 
-  static final int genePoolSize = 11;
+  static final int genePoolSize = 12;
   float collisionPunishment = 0;
   float offScreenPunishment = 0;
   float goalNotVisiblePunishment = 0;
@@ -26,6 +26,7 @@ class Creature { //<>// //<>//
   PVector initialDirection; //7,8
   int rayLength;            //9
   float noiseLocation;      //10
+  float avoidance;          //11
 
   int statringFrameCount;
 
@@ -122,7 +123,11 @@ class Creature { //<>// //<>//
     If it is the top performer, marks it as such.
   */
   void show() {
-
+    checkOverlap();
+    if(!isVisible()){
+      return; 
+    }
+    
     boolean top = true;
     for (Creature creature : creatures) {
       if (creature.getFitness() > getFitness()) {
@@ -164,7 +169,10 @@ class Creature { //<>// //<>//
     float dBR = dist(width, height, direction.x, direction.y);
     float dBL = dist(0, height, direction.x, direction.y);
     float dMax = max(max(dTL, dTR), max(dBL, dBR));
-    float distanceReward = map(d, dMax, 0, 0, DISTANCE_REWARD_MAX);         
+    float distanceReward = map(d, dMax, 0, 0, DISTANCE_REWARD_MAX);
+    if(timer > TIME_PER_GENERATION/2){
+      distanceReward -= timer/TIME_PER_GENERATION;
+    }
     if (wallIsBlocking(direction)!=null) {
       goalNotVisiblePunishment=GOAL_NOT_VISIBLE_PUNISHMENT;
     } else {
@@ -193,6 +201,7 @@ class Creature { //<>// //<>//
     initialDirection = new PVector(mapGene(7, -1, 1), mapGene(8, -1, 1));
     rayLength = (int)mapGene(9, 30, 50);
     noiseLocation = mapGene(10, 0, 300);
+    avoidance = (int)mapGene(11, 0, 10);
   }
 
 
@@ -258,7 +267,7 @@ class Creature { //<>// //<>//
         if (collisionLine[0].x == collisionLine[1].x) {
           //For vertical walls
           float dist = dist(location.x, location.y, collisionLine[0].x, location.y);
-          float strength = map(dist, rayLength, 0, 0, 4*accelerationForce);
+          float strength = map(dist, rayLength, 0, 0, avoidance*accelerationForce);
           
           if (intersectionAngle < PI/2 || (intersectionAngle >= 3*PI/2 && intersectionAngle <= TWO_PI)) {
             
@@ -275,7 +284,7 @@ class Creature { //<>// //<>//
           
           //For horizontal walls
           float dist = dist(location.x, location.y, location.x, collisionLine[0].y);
-          float strength = map(dist, rayLength, 0, 0, 4*accelerationForce);
+          float strength = map(dist, rayLength, 0, 0, avoidance*accelerationForce);
           
           if (intersectionAngle >=  PI) {
             
@@ -318,7 +327,7 @@ class Creature { //<>// //<>//
       float dist2 = min(dTop, dBottom);
       float dist = min(dist1, dist2);
 
-      float strength = map(dist, min, 0, 0, 5*accelerationForce);
+      float strength = map(dist, min, 0, 0, avoidance*accelerationForce);
       PVector vectorOffset = new PVector();
       if (dist==dLeft) {
         vectorOffset.set(strength, 0);
@@ -388,6 +397,25 @@ class Creature { //<>// //<>//
 
 
   /*
+    Checks whether the creature is overlapping with any visible creatures and 
+    sets the visible flag as false if it does.
+  */
+  void checkOverlap(){ //<>//
+    for(Creature creature : creatures){ //<>//
+      if(creature != this){ //<>//
+        if(creature.isVisible()){ //<>//
+          if(dist(creature.getLocation().x, creature.getLocation().y, location.x, location.y) < 10){ //<>//
+            visible = false; //<>//
+            return;
+          }
+        }
+      }
+    }
+    visible = true;
+  }
+
+
+  /*
     Checks whether a creature can "see" the vector "goal". If it can't,
     return's the two points, forming the line that is blocking the creature's
     "vision".
@@ -438,10 +466,9 @@ class Creature { //<>// //<>//
   */
   void check() {
     if (getFitness()>ACCURACY*DISTANCE_REWARD_MAX) {
-      //solution = new Creature(getGenes());
-      //solved = true;
-      println("Fitness: " + getFitness());
-
+      
+      println("\nFitness: " + getFitness());
+      println("Generation: " + generation);
       print("{");
       for (int i = 0; i < genes.length; i++) {
         print(genes[i]);
@@ -501,6 +528,10 @@ class Creature { //<>// //<>//
 
   float getGoalPunishment() {
     return goalNotVisiblePunishment;
+  }
+
+  float getAvoidance(){
+    return avoidance;
   }
 
   void setCollisionPunishment(float collisionPunishment) {

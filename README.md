@@ -74,7 +74,8 @@ The penalties are given specific weights, depending on their importance. The rew
   * 6 - the seed for the Perlin noise function
   * 7-8 - the acceleration initialization vector, which whanges the start direction
   * 9 - the length of the vector, which checks for impending collisions
-  * 10 - the initial value of the offset for the noise function
+  * 10 - the initial value of the offset for the noise function  
+  * 11 - the amount, by which the creature avoids walls and bounds
 
 ## Creature Mutation
   ```java
