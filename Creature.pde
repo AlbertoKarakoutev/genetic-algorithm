@@ -173,12 +173,8 @@ class Creature { //<>// //<>//
     if(timer > TIME_PER_GENERATION/2){
       distanceReward -= timer/TIME_PER_GENERATION;
     }
-    if (wallIsBlocking(direction)!=null) {
-      goalNotVisiblePunishment=GOAL_NOT_VISIBLE_PUNISHMENT;
-    } else {
-      goalNotVisiblePunishment=0;
-    }
-    float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment /*+ velocityReward - turnPenalty*/;
+    goalNotVisiblePunishment = wallIsBlocking(direction).size() * GOAL_NOT_VISIBLE_PUNISHMENT;
+    float fitness = distanceReward + collisionPunishment + offScreenPunishment + goalNotVisiblePunishment;
 
     return fitness;
   }
@@ -207,7 +203,7 @@ class Creature { //<>// //<>//
 
   /*
     Based on the mutation type, calculates the mutation amount for the creature.
-    After that, there is a 50/50 chance that a gene will mutate by that given amount.
+    After that, there is a 20% chance that a gene will mutate by that given amount.
     If after mutation a gene has clipped the (0;1) limit, re-maps the gene value in (0;1).
   */
   void mutate(float lastFitness) {
@@ -234,7 +230,7 @@ class Creature { //<>// //<>//
 
     for (int i = 0; i < genePoolSize; i++) {
 
-      boolean willMutate = random(1) > 0.9; 
+      boolean willMutate = random(1) > 0.8; 
 
       if (willMutate) {
         if (genes[i] > 0.5) {
@@ -257,10 +253,10 @@ class Creature { //<>// //<>//
   */
   void avoidWalls() {
     for(PVector ray : rays()){
-      if (wallIsBlocking(PVector.add(location, ray))!=null) {
+      if (wallIsBlocking(PVector.add(location, ray)).size() > 0) {
         
         
-        PVector[] collisionLine = wallIsBlocking(PVector.add(location, ray));
+        PVector[] collisionLine = wallIsBlocking(PVector.add(location, ray)).get(0);
         float intersectionAngle = (ray.heading() > 0) ? ray.heading() : TWO_PI+ray.heading();
         PVector vectorOffset = new PVector();
         
@@ -390,8 +386,8 @@ class Creature { //<>// //<>//
     Checks whether a creature has hit a wall.
   */
   boolean hasCollided(Wall wall, PVector inputLocation) {
-    boolean betweenX = inputLocation.x+8>wall.getLocation().x && inputLocation.x-8<wall.getLocation().x+wall.getSize().x;
-    boolean betweenY = inputLocation.y+8>wall.getLocation().y && inputLocation.y-8<wall.getLocation().y+wall.getSize().y;
+    boolean betweenX = inputLocation.x+8>wall.getVertex1().x && inputLocation.x-8<wall.getVertex2().x;
+    boolean betweenY = inputLocation.y+8>wall.getVertex1().y && inputLocation.y-8<wall.getVertex2().y;
     return betweenX && betweenY;
   }
 
@@ -417,14 +413,16 @@ class Creature { //<>// //<>//
 
   /*
     Checks whether a creature can "see" the vector "goal". If it can't,
-    return's the two points, forming the line that is blocking the creature's
+    returns a list of the pairs of points which form the lines that are blocking the creature's
     "vision".
   */
-  PVector[] wallIsBlocking(PVector goal) {
+  ArrayList<PVector[]> wallIsBlocking(PVector goal) {
     float x1 = goal.x;
     float y1 = goal.y;
     float x2 = location.x;
     float y2 = location.y;
+
+    ArrayList<PVector[]> wallVectors = new ArrayList<PVector[]>();
 
     for (Wall wall : walls) {
       for (int i = 0; i < 4; i++) {
@@ -448,15 +446,15 @@ class Creature { //<>// //<>//
           float minDist = min(min(distCorner1, distCorner3), min(distCorner2, distCorner4));
           if (minDist == distCorner1 || minDist == distCorner2) {
             PVector[] line = {corner1, corner2};
-            return line;
+            wallVectors.add(line);
           } else {
             PVector[] closerLine = {otherCorner1, otherCorner2};
-            return closerLine;
+            wallVectors.add(closerLine);
           }
         }
       }
     }
-    return null;
+    return wallVectors;
   }
 
 

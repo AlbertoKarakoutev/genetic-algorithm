@@ -22,9 +22,10 @@ static final int TIME_PER_GENERATION
 static final float DISTANCE_REWARD_MAX **
 static final float OFF_SCREEN_PUNISHMENT
 static final float GOAL_NOT_VISIBLE_PUNISHMENT
+static final int WALL_GRID_SIZE
 ```
 ###### \* exponential/exponential-random/random/constant/no
-###### \*\* _|WALL_PUNISHMENT - OFF_SCREEN_PUNISHMENT - GOAL_NOT_VISIBLE_PUNISHMENT| + 1_
+###### \*\* _|WALL_PUNISHMENT - OFF_SCREEN_PUNISHMENT| + 1_
 ###### \*\*\* Avoid walls and screen boundaries
 
 ## Creature Initialization
@@ -79,12 +80,12 @@ The penalties are given specific weights, depending on their importance. The rew
 
 ## Creature Mutation
   ```java
-  void readGenes(float lastFitness)
+  void mutate(float lastFitness)
   ```
-  The creature mutation consists of looping over all it's genes, and mutating a gene 50% of the time. Based on the ***MUTATION_TYPE***, the creatures have five ways of mutating their genes:  
+  The creature mutation consists of looping over all it's genes, and mutating a gene 20% of the time. Based on the ***MUTATION_TYPE***, the creatures have five ways of mutating their genes:  
   * exponential-random - The mutation amount is reduced the closer the creatures get to their destination. Based on the _lastFitness_ parameter, which is the best fitness value of the previous generation, 
   the creature mutation is calculated. Additionally, a small random offset is aggregated to ensure a more efficient rotation schematic.
-  * exponential - similar to the _exponential-random_, but without the additional ranom offset.
+  * exponential - similar to the _exponential-random_, but without the additional random offset.
   * constant - a constant value of mutationis applied
   * random - a value between 0 and a small maximum amount is applied as a mutation
   * no - (_testing_) No mutation value is applied.
