@@ -11,9 +11,9 @@ all the Creatures are unable to move.
 
 ## Algorithm parameters
 ```java
-static final boolean AVOID ***
 static final boolean SOLVED
 static final float ACCURACY
+static final int WALL_GRID_SIZE
 static final int POPULATION_SIZE
 static final String MUTATION_TYPE *
 static final float WALL_PUNISHMENT
@@ -22,11 +22,9 @@ static final int TIME_PER_GENERATION
 static final float DISTANCE_REWARD_MAX **
 static final float OFF_SCREEN_PUNISHMENT
 static final float GOAL_NOT_VISIBLE_PUNISHMENT
-static final int WALL_GRID_SIZE
 ```
 ###### \* exponential/exponential-random/random/constant/no
 ###### \*\* _|WALL_PUNISHMENT - OFF_SCREEN_PUNISHMENT| + 1_
-###### \*\*\* Avoid walls and screen boundaries
 
 ## Creature Initialization
   ```java
@@ -36,7 +34,7 @@ static final int WALL_GRID_SIZE
   A creature object is created with a set of genes (a _float[]_ with a set length and value ranges: **[0; 1]**) which are selected randomly. The genes are interpreted and assigned to it's "qualities". 
   The creature is created at a fixed point and with acceleration and velocity vectors of 0.
 * ### Generation > 0
-  A creature object is created with a set of genes. The genes are directly copied from it's parent creature. They are then mutated by a specified amount. After that, they are interpreted and assigned as well.  
+  A creature object is created with a set of genes. The genes are randomly selected from it's parent creatures. They are then mutated by a specified amount. After that, they are interpreted and assigned as well.  
 
 ## Creature Display
   ```java
@@ -48,9 +46,8 @@ static final int WALL_GRID_SIZE
   ```java
   void move()
   ```
-  Initializes the acceleration with the ***initialDirection*** property. After that, a rotation direction is generated, based on a seed, which is set for a Perlin noise function, and offset by a specific amount.
-  The rotation is applied in the specified direction and added ot the acceleration using polar coordinates. The creature than calculates any collisions with walls and/or screen boundries and aggregates the acceleration into the velocity, which is limited
-  to a maximum value. The velocity is then added to the location.
+  Initializes the acceleration with the ***initialDirection*** property. The creature then calculates any collisions   with walls and/or screen boundries and aggregates the acceleration into the velocity, whose magnitude is set
+  to the ***velocityForce*** property. The velocity is then added to the location.
   
 ## Creature Fitness Function
   ```java
@@ -70,13 +67,10 @@ The penalties are given specific weights, depending on their importance. The rew
   All the values from the ***genes*** array are re-mapped to the appropriate values for each of the creature's variables. The genes are assigned as follows:
   * 0-2 - the three colors of the creature
   * 3 - the acceleration force that the creature can exibit
-  * 4 - the rotation speed (angle, by which the creature can turn)
-  * 5 - the maximum velocity that the creature's speed is limited to
-  * 6 - the seed for the Perlin noise function
-  * 7-8 - the acceleration initialization vector, which whanges the start direction
+  * 4 - the maximum velocity that the creature's speed is limited to
+  * 5-6 - the acceleration initialization vector, which whanges the start direction
   * 9 - the length of the vector, which checks for impending collisions
-  * 10 - the initial value of the offset for the noise function  
-  * 11 - the amount, by which the creature avoids walls and bounds
+  * 8 - the amount, by which the creature avoids walls and bounds
 
 ## Creature Mutation
   ```java

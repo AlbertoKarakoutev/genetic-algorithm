@@ -13,7 +13,7 @@ class Wall{
     float scaleY = height/WALL_GRID_SIZE;
     
     PVector vertex1Scaled = new PVector(x1*scaleX, y1*scaleY);
-    PVector vertex2Scaled = new PVector(x2*scaleX + 20, y2*scaleY + 20);
+    PVector vertex2Scaled = new PVector(x2*scaleX + 5, y2*scaleY + 5);
     
     location = vertex1Scaled;
     
