@@ -69,7 +69,7 @@ The penalties are given specific weights, depending on their importance. The rew
   * 3 - the acceleration force that the creature can exibit
   * 4 - the maximum velocity that the creature's speed is limited to
   * 5-6 - the acceleration initialization vector, which whanges the start direction
-  * 9 - the length of the vector, which checks for impending collisions
+  * 7 - the length of the vector, which checks for impending collisions
   * 8 - the amount, by which the creature avoids walls and bounds
 
 ## Creature Mutation
