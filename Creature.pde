@@ -1,6 +1,6 @@
 class Creature { //<>//
 
-    PVector location;
+    PVector location = new PVector(100, 5*height/6);
     PVector velocity;
     PVector acceleration;
 
@@ -38,7 +38,6 @@ class Creature { //<>//
             genes[i] = random(1);
         }
         readGenes();
-        location = new PVector(100, 3*height/4);
         velocity = new PVector();
         acceleration = new PVector(0, 1);
     }
@@ -50,7 +49,6 @@ class Creature { //<>//
     public Creature(float[] genes) {
         this.genes = genes;
         readGenes();
-        location = new PVector(100, 3*height/4);
         velocity = new PVector();
         acceleration = new PVector(0, 1);
     }
@@ -64,7 +62,6 @@ class Creature { //<>//
         this.genes = genes;
         mutate(fitness);
         readGenes();
-        location = new PVector(100, 3*height/4);
         velocity = new PVector();
         acceleration = new PVector(0, 1);
     }
@@ -84,7 +81,6 @@ class Creature { //<>//
         this.genes = genes;
         mutate(fitness);
         readGenes();
-        location = new PVector(100, 3*height/4);
         velocity = new PVector();
         acceleration = new PVector(0, 1);
     }

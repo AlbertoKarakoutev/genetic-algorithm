@@ -4,15 +4,15 @@ import processing.sound.*;
 
 /*Labirynth 1 solution*/
 float[] solutionGenes = 
-{0.23496313, 
-0.91359293, 
-0.28923702, 
-0.88317835, 
-0.9386514, 
-0.21056145, 
-0.17613028, 
-0.5104908, 
-0.5451577};
+{0.74257475, 
+0.2815247, 
+0.50877297, 
+0.884677, 
+0.9273903, 
+0.05489403, 
+0.73953724, 
+0.105920196, 
+0.83321095};
 
 
 /*Labirynth 2 solution*/
@@ -30,6 +30,7 @@ float[] solutionGenes =
 
 int timer;
 int generation;
+int noUpgradeCounter;
 boolean createdNewGeneration;
 boolean stillMoving;
 boolean pause = false;
@@ -38,7 +39,7 @@ float bestFitness;
 
 //Algorithm parameters
 static final int POPULATION_SIZE = 500;
-static final int TIME_PER_GENERATION = 10;
+static final int TIME_PER_GENERATION = 17;
 static final float SPEED_MULTIPLIER = 1;
 static final boolean SOLVED = true;
 static final String MUTATION_TYPE = "exponential-random"; /* [ exponential / exponential-random / random / constant / no ] */
@@ -94,11 +95,13 @@ void setup() {
     walls.add(new Wall(0, 3, 8, 3));
     walls.add(new Wall(8, 1.5, 8, 5));
     walls.add(new Wall(2, 5, 8, 5));
-    walls.add(new Wall(0, 7, 8, 7));
+    walls.add(new Wall(1, 7, 10, 7));
+    walls.add(new Wall(0, 8, 9, 8));
     walls.add(new Wall(6, 0, 6, 1.5));  
     walls.add(new Wall(2, 1.5, 6, 1.5));
-    walls.add(new Wall(8, 7, 8, 9));
+    walls.add(new Wall(8, 9, 8, 10));
     walls.add(new Wall(3, 9, 8, 9));
+    walls.add(new Wall(2, 6, 10, 6));
     
     /*Labirynth 2 walls*/
     //walls.add(new Wall(0, 0, 1, 1));
@@ -125,7 +128,7 @@ void setup() {
 
 void draw() {
 
-    background(0);
+    background(51);
 
     pushStyle();
     fill(255);
@@ -157,13 +160,9 @@ void draw() {
     text("Time left: " + Integer.toString(TIME_PER_GENERATION - timer) + "s", 0, 20);
     text("Generations: " + generation, 0, 40);
     text("Population size: " + POPULATION_SIZE, 0, 60);
+    text("Consecutive upgrade fails: " + noUpgradeCounter, 0, 80);
     popStyle();
 
-    if (generation > 0) {
-        text("Overall best fitness: " + bestFitness, 0, 80);
-        text("Last generation's top performer: ", 0, 760);
-        creatureInfo(previousTop);
-    }
     if (!SOLVED) {
 
         //Move and show all the creatures if they haven't stopped
@@ -202,8 +201,18 @@ void draw() {
             
             if(previousTop.getFitness() >= first.getFitness()){
                 no_upgrade.play();
+                noUpgradeCounter++;
+                if(noUpgradeCounter > 20){
+                    for(int i = 0; i < sorted.length/2; i++){
+                        Creature temp = sorted[i];
+                        sorted[i] = sorted[(sorted.length - 1) - i];
+                        sorted[(sorted.length - 1) - i] = temp;
+                    }
+                    noUpgradeCounter = 0;   
+                }
             }else{
                 upgrade.play();
+                noUpgradeCounter = 0;
             }
             bestFitness = first.getFitness();
             previousTop = first;
@@ -242,7 +251,13 @@ void draw() {
         }
         solution.show();
     }
-
+    
+    if (generation > 0) {
+        text("Overall best fitness: " + bestFitness, 0, 100);
+        text("Last generation's top performer: ", 0, 760);
+        creatureInfo(previousTop);
+    }
+    
     if (mousePressed) {
         if (mouseButton == LEFT) {
             if (newVertex1 != null) {
